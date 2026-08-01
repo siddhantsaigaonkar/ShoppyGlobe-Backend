@@ -41,3 +41,30 @@ export const getProductById = async (req, res) => {
     });
   }
 };
+
+
+export const createProduct = async (req, res) => {
+  try {
+    const { name, price, description, stock, image, category } = req.body;
+
+    const product = await Product.create({
+      name,
+      price,
+      description,
+      stock,
+      image,
+      category,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
