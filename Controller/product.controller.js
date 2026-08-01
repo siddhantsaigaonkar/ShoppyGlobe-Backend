@@ -123,3 +123,43 @@ export const updateProduct = async (req, res) => {
     });
   }
 };
+
+
+// delete product
+export const deleteProduct = async (req, res) => {
+  try {
+    // Extract product ID from request parameters
+    const { id } = req.params;
+
+    // Check if the provided ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
+
+    // Find the product by ID and delete it
+    const deletedProduct = await Product.findByIdAndDelete(id);
+
+    // Return 404 if product doesn't exist
+    if (!deletedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // Return success response
+    res.status(200).json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+  } catch (error) {
+    // Handle unexpected server errors
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
