@@ -90,3 +90,45 @@ export const updateCart = async (req, res) => {
     });
   }
 };
+
+
+
+// DELETE /cart/:id
+// Remove a product from the cart
+export const removeFromCart = async (req, res) => {
+  try {
+    // Extract cart item ID from request parameters
+    const { id } = req.params;
+
+    // Check if the provided ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cart ID",
+      });
+    }
+
+    // Find the cart item by ID and delete it
+    const deletedCart = await Cart.findByIdAndDelete(id);
+
+    // If cart item doesn't exist, return 404
+    if (!deletedCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart item not found",
+      });
+    }
+
+    // Return success response
+    res.status(200).json({
+      success: true,
+      message: "Product removed from cart successfully",
+    });
+  } catch (error) {
+    // Handle unexpected server errors
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
