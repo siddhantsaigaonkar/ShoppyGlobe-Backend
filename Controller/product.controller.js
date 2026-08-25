@@ -18,11 +18,25 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
+
 // GET /products/:id
 export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    // Get product ID from URL
+    const { id } = req.params;
 
+    // Check if ID is a valid MongoDB ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
+
+    // Find product by ID
+    const product = await Product.findById(id);
+
+    // If product doesn't exist
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -30,6 +44,7 @@ export const getProductById = async (req, res) => {
       });
     }
 
+    // Send product
     res.status(200).json({
       success: true,
       data: product,
