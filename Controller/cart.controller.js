@@ -4,7 +4,10 @@ import mongoose from "mongoose";
 
 export const addToCart = async (req, res) => {
   try {
-    const { productId, quantity } = req.body;
+    // Get product ID and quantity from request body
+    const { productId, quantity = 1 } = req.body;
+
+    // Check if the product ID is valid
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       return res.status(400).json({
         success: false,
@@ -12,6 +15,15 @@ export const addToCart = async (req, res) => {
       });
     }
 
+    // Check if quantity is valid
+    if (quantity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity must be at least 1",
+      });
+    }
+
+    // Check whether the product exists
     const product = await Product.findById(productId);
 
     if (!product) {
@@ -21,17 +33,61 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    const cartItem = await Cart.create({
+    // Check if this product already exists in the logged-in user's cart
+    const existingCartItem = await Cart.findOne({
+      userId: req.userId,
       productId,
-      quantity,
     });
 
-    res.status(201).json({
+    // If the product already exists, increase its quantity
+    if (existingCartItem) {
+      existingCartItem.quantity += Number(quantity);
+
+      // Save the updated quantity
+      await existingCartItem.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Cart quantity updated successfully",
+        cartItem: existingCartItem,
+      });
+    }
+
+    // If the product is not in the cart, create a new cart item
+    const cartItem = await Cart.create({
+      userId: req.userId,
+      productId,
+      quantity: Number(quantity),
+    });
+
+    return res.status(201).json({
       success: true,
-      message: "Product added to cart",
+      message: "Product added to cart successfully",
       cartItem,
     });
   } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+// GET /cart
+// Get all cart items belonging to the logged-in user
+export const getCart = async (req, res) => {
+  try {
+    // Find cart items only for the logged-in user
+    const cartItems = await Cart.find({
+      userId: req.userId,
+    }).populate("productId");
+
+    // Return the user's cart
+    res.status(200).json({
+      success: true,
+      cart: cartItems,
+    });
+  } catch (error) {
+    // Handle unexpected server errors
     res.status(500).json({
       success: false,
       message: error.message,
@@ -39,15 +95,17 @@ export const addToCart = async (req, res) => {
   }
 };
 
-
 // PUT /cart/:id
 // Update the quantity of a product in the cart
 export const updateCart = async (req, res) => {
   try {
-    // Extract cart item ID from request parameters
+    // Get cart item ID from URL
     const { id } = req.params;
 
-    // Check if the provided ID is a valid MongoDB ObjectId
+    // Get new quantity from request body
+    const { quantity } = req.body;
+
+    // Validate cart ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -55,20 +113,30 @@ export const updateCart = async (req, res) => {
       });
     }
 
-    // Extract updated quantity from request body
-    const { quantity } = req.body;
+    // Validate quantity
+    if (quantity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity must be at least 1",
+      });
+    }
 
-    // Find the cart item by ID and update its quantity
-    const updatedCart = await Cart.findByIdAndUpdate(
-      id,
-      { quantity },
+    // Update only if the cart item belongs to the logged-in user
+    const updatedCart = await Cart.findOneAndUpdate(
       {
-        new: true, // Return the updated document
-        runValidators: true, // Apply schema validations
-      }
+        _id: id,
+        userId: req.userId,
+      },
+      {
+        quantity: Number(quantity),
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
     );
 
-    // If cart item doesn't exist, return 404
+    // Cart item doesn't exist or doesn't belong to this user
     if (!updatedCart) {
       return res.status(404).json({
         success: false,
@@ -76,14 +144,12 @@ export const updateCart = async (req, res) => {
       });
     }
 
-    // Return success response
     res.status(200).json({
       success: true,
       message: "Cart updated successfully",
       cart: updatedCart,
     });
   } catch (error) {
-    // Handle unexpected server errors
     res.status(500).json({
       success: false,
       message: error.message,
@@ -109,7 +175,10 @@ export const removeFromCart = async (req, res) => {
     }
 
     // Find the cart item by ID and delete it
-    const deletedCart = await Cart.findByIdAndDelete(id);
+    const deletedCart = await Cart.findOneAndDelete({
+      _id: id,
+      userId: req.userId,
+    });
 
     // If cart item doesn't exist, return 404
     if (!deletedCart) {
