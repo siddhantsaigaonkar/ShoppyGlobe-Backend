@@ -38,10 +38,6 @@ The backend provides APIs for managing users, products, and shopping cart items.
 ---
 
 
-
-
----
-
 ## Environment Variables
 
 Create a `.env` file in the project root directory and add the following:
@@ -50,6 +46,8 @@ Create a `.env` file in the project root directory and add the following:
 PORT=5001
 MONGO_URI=mongodb+srv://siddhantsaigaonkar14k_db_user:qZVIr8XJ2VhN8ek4@shoppyglobe.qmwhzzx.mongodb.net/shoppyglobe?retryWrites=true&w=majority&appName=shoppyglobe
 JWT_SECRET=dhjdhjdchjdjcdchbb
+
+---
 
 
 # Author
