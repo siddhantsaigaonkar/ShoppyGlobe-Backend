@@ -120,6 +120,7 @@ http://localhost:5000
 | ------ | --------------- | ---------------------- |
 | POST   | `/api/register` | Register a new user    |
 | POST   | `/api/login`    | Login an existing user |
+| POST   | `/api/logout`   | Logout an existing user |
 
 ### Product APIs
 
